@@ -1,0 +1,5 @@
+# Ignore SQLite and other database files
+*.db
+
+# Ignore built binaries
+bin/

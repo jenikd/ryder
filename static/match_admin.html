@@ -1,0 +1,22 @@
+<div class="section" id="matches-section">
+    <h2>Matches</h2>
+    <form id="match-form">
+        <input type="hidden" id="match-id">
+        <label for="match-format">Format</label>
+        <select id="match-format" required>
+            <option value="singles">Singles</option>
+            <option value="foursome">Foursome</option>
+            <option value="texas_scramble">Texas Scramble</option>
+        </select>
+        <label for="match-team-a">Team A</label>
+        <select id="match-team-a" required></select>
+        <label for="match-team-b">Team B</label>
+        <select id="match-team-b" required></select>
+        <label for="match-players-a">Players for Team A</label>
+        <select id="match-players-a" multiple required></select>
+        <label for="match-players-b">Players for Team B</label>
+        <select id="match-players-b" multiple required></select>
+        <button type="submit">Add Match</button>
+    </form>
+    <ul id="matches-list"></ul>
+</div>

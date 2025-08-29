@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Enter Match Score</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <script defer src="/static/score.js"></script>
+    <style>
+        body { font-family: 'Roboto', Arial, sans-serif; background: #f3f7ff; margin: 0; }
+        .container { max-width: 500px; margin: 2rem auto; background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 2rem 1rem; }
+        h1, h2 { text-align: center; color: #2563eb; }
+        .match-info { margin-bottom: 1.5rem; }
+        .teams { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+        .score { text-align: center; font-size: 1.2rem; margin-bottom: 1.5rem; }
+        .holes { display: flex; flex-direction: column; gap: 0.5rem; }
+        .hole-row { display: flex; align-items: center; justify-content: space-between; background: #f3f7ff; border-radius: 8px; padding: 0.5rem 1rem; }
+        .hole-label { font-weight: 700; }
+        .hole-score { display: flex; gap: 0.5rem; }
+        .hole-score button { padding: 0.3rem 0.8rem; border-radius: 6px; border: 1px solid #bbb; background: #e2e8f0; cursor: pointer; font-weight: 700; }
+        .hole-score button.selected { background: #2563eb; color: #fff; border: 1px solid #2563eb; }
+        @media (max-width: 600px) { .container { padding: 1rem 0.2rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enter Match Score</h1>
+        <div id="match-select-section">
+            <label for="match-select">Select Match:</label>
+            <select id="match-select"></select>
+        </div>
+        <div id="match-score-section" style="display:none;">
+            <div class="match-info">
+                <div class="teams">
+                    <span id="team-a"></span>
+                    <span id="team-b"></span>
+                </div>
+                <div class="score" id="match-score"></div>
+            </div>
+            <h2>Holes</h2>
+            <div class="holes" id="holes-list"></div>
+            <div style="text-align:center; margin-top:2rem;">
+                <button id="finish-btn" style="background:#38a169; color:#fff; border:none; border-radius:8px; padding:0.7rem 2rem; font-size:1.1rem; font-weight:700;">Finish Match</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

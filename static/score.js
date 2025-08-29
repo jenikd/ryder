@@ -1,0 +1,203 @@
+// Ryder Score Entry Page
+
+let matches = [];
+let currentMatch = null;
+let holeResults = Array(18).fill(null); // 'A', 'B', 'AS'
+
+async function fetchMatches() {
+    const res = await fetch('/api/match/list');
+    const data = await res.json();
+    matches = data.matches || [];
+    const sel = document.getElementById('match-select');
+    sel.innerHTML = '<option value="">-- Select Match --</option>';
+    matches.forEach(m => {
+        sel.innerHTML += `<option value="${m.id}">${m.format.toUpperCase()} | ${m.team_a.name} vs ${m.team_b.name}</option>`;
+    });
+}
+
+document.getElementById('match-select').onchange = function() {
+    const id = parseInt(this.value);
+    if (!id) return;
+    currentMatch = matches.find(m => m.id === id);
+    showMatchScoreSection();
+};
+
+async function showMatchScoreSection() {
+    if (!currentMatch) return;
+    document.getElementById('match-select-section').style.display = 'none';
+    document.getElementById('match-score-section').style.display = '';
+    document.getElementById('team-a').textContent = `${currentMatch.team_a.name}: ${currentMatch.team_a.players.map(p => p.name).join(', ')}`;
+    document.getElementById('team-b').textContent = `${currentMatch.team_b.name}: ${currentMatch.team_b.players.map(p => p.name).join(', ')}`;
+    // Load hole results and match status from DB
+    await loadHoleResults();
+    await loadMatchStatus();
+    renderHoles();
+    updateMatchScoreDisplay();
+    updateFinishButton();
+    // Register finish button event every time section is shown
+    const btn = document.getElementById('finish-btn');
+    if (btn) {
+        btn.onclick = async function() {
+            if (!currentMatch) return;
+            if (currentMatch.status === 'completed') {
+                await setMatchStatus('prepared');
+            } else {
+                await setMatchStatus('completed');
+            }
+        };
+    }
+    setScoringEnabled(currentMatch.status !== 'completed');
+}
+
+async function loadMatchStatus() {
+    if (!currentMatch) return;
+    // Use match list API to get latest status
+    const res = await fetch('/api/match/list');
+    if (res.ok) {
+        const data = await res.json();
+        const match = (data.matches || []).find(m => m.id == currentMatch.id);
+        if (match && match.status) currentMatch.status = match.status;
+    }
+}
+
+function renderHoles() {
+    const holesDiv = document.getElementById('holes-list');
+    holesDiv.innerHTML = '';
+    for (let i = 0; i < 18; i++) {
+        const row = document.createElement('div');
+        row.className = 'hole-row';
+        row.innerHTML = `<span class="hole-label">Hole ${i+1}</span>` +
+            `<span class="hole-score">
+                <button type="button" class="hole-btn" data-hole="${i}" data-val="A">${currentMatch.team_a.name}</button>
+                <button type="button" class="hole-btn" data-hole="${i}" data-val="B">${currentMatch.team_b.name}</button>
+                <button type="button" class="hole-btn" data-hole="${i}" data-val="AS">A/S</button>
+            </span>`;
+        holesDiv.appendChild(row);
+    }
+    document.querySelectorAll('.hole-btn').forEach(btn => {
+        btn.onclick = function() {
+            const hole = parseInt(this.getAttribute('data-hole'));
+            const val = this.getAttribute('data-val');
+            holeResults[hole] = val;
+            updateHoleButtons(hole);
+            updateMatchScoreDisplay();
+            saveHoleResults();
+        };
+    });
+    // Restore selection if any
+    for (let i = 0; i < 18; i++) updateHoleButtons(i);
+}
+
+function updateHoleButtons(hole) {
+    document.querySelectorAll(`.hole-btn[data-hole="${hole}"]`).forEach(btn => {
+        if (btn.getAttribute('data-val') === holeResults[hole]) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
+}
+
+function updateMatchScoreDisplay() {
+    // Calculate up/down or A/S
+    let aUp = 0, bUp = 0;
+    for (let i = 0; i < 18; i++) {
+        if (holeResults[i] === 'A') aUp++;
+        else if (holeResults[i] === 'B') bUp++;
+    }
+    let scoreText = '';
+    if (aUp > bUp) scoreText = `${currentMatch.team_a.name} ${aUp-bUp} Up`;
+    else if (bUp > aUp) scoreText = `${currentMatch.team_b.name} ${bUp-aUp} Up`;
+    else scoreText = 'All Square';
+    document.getElementById('match-score').textContent = scoreText;
+}
+
+async function saveHoleResults() {
+    if (!currentMatch) return;
+    await fetch(`/api/match/holescore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_id: currentMatch.id, holes: holeResults })
+    });
+    // If any hole is set, set match as running
+    if (holeResults.some(v => v === 'A' || v === 'B' || v === 'AS')) {
+        if (currentMatch.status !== 'running') {
+            await setMatchStatus('running', true);
+        }
+    }
+    // Notify dashboard to update
+    localStorage.setItem('ryder-dashboard-update', Date.now().toString());
+}
+
+function setScoringEnabled(enabled) {
+    document.querySelectorAll('.hole-btn').forEach(btn => {
+        btn.disabled = !enabled;
+        if (!enabled) {
+            btn.classList.add('disabled');
+        } else {
+            btn.classList.remove('disabled');
+        }
+    });
+}
+
+// Patch setMatchStatus to notify dashboard
+async function setMatchStatus(status, silent) {
+    if (!currentMatch) return;
+    // Optimistically update UI
+    currentMatch.status = status;
+    updateFinishButton();
+    setScoringEnabled(status !== 'completed');
+    await fetch('/api/match/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_id: currentMatch.id, status })
+    });
+    if (!silent) localStorage.setItem('ryder-dashboard-update', Date.now().toString());
+}
+
+async function loadHoleResults() {
+    if (!currentMatch) return;
+    const res = await fetch(`/api/match/holescore?match_id=${currentMatch.id}`);
+    if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.holes)) {
+            holeResults = data.holes;
+        }
+    }
+}
+
+function getQueryParam(name) {
+    const url = new URL(window.location.href);
+    return url.searchParams.get(name);
+}
+
+window.onload = async function() {
+    await fetchMatches();
+    const matchId = getQueryParam('match');
+    if (matchId) {
+        currentMatch = matches.find(m => m.id == matchId);
+        if (currentMatch) {
+            showMatchScoreSection();
+            return;
+        }
+    }
+};
+
+function updateFinishButton() {
+    const btn = document.getElementById('finish-btn');
+    if (!btn || !currentMatch) return;
+    if (currentMatch.status === 'completed') {
+        btn.textContent = 'Unfinish Match';
+        btn.style.background = '#e53e3e';
+    } else {
+        btn.textContent = 'Finish Match';
+        btn.style.background = '#38a169';
+    }
+}
+
+// Patch showMatchScoreSection to also enable/disable scoring
+const origShowMatchScoreSection = showMatchScoreSection;
+showMatchScoreSection = async function() {
+    await origShowMatchScoreSection();
+    setScoringEnabled(currentMatch && currentMatch.status !== 'completed');
+};
