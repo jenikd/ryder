@@ -3,10 +3,20 @@ package backend
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"github.com/joho/godotenv"
 )
 
 func StartServer() {
-	fmt.Println("Starting backend server...")
+
+	// Load .env file if present
+	_ = godotenv.Load()
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	fmt.Printf("Starting backend server on port %s...\n", port)
 
 	mux := http.NewServeMux()
 	// Dashboard page (must be registered before /)
@@ -75,7 +85,8 @@ func StartServer() {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	addr := ":" + port
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		fmt.Printf("Server failed to start: %v\n", err)
 	}
 

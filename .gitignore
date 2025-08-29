@@ -3,3 +3,6 @@
 
 # Ignore built binaries
 bin/
+
+# Ignore environment files
+.env
