@@ -63,8 +63,20 @@ window.onload = function() {
     fetchDashboard();
     // WebSocket for live updates
     let wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    let ws = new WebSocket(wsProto + '://' + window.location.host + '/ws');
+    let wsUrl = wsProto + '://' + window.location.host + '/ws';
+    console.log('Connecting to WebSocket:', wsUrl);
+    let ws = new WebSocket(wsUrl);
+    ws.onopen = function() {
+        console.log('WebSocket connected');
+    };
+    ws.onclose = function() {
+        console.log('WebSocket disconnected');
+    };
+    ws.onerror = function(e) {
+        console.error('WebSocket error:', e);
+    };
     ws.onmessage = function(e) {
+        console.log('WebSocket message:', e.data);
         if (e.data === 'update') fetchDashboard();
     };
 };

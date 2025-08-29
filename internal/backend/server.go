@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"github.com/joho/godotenv"
+
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 )
 
 func StartServer() {
@@ -20,6 +21,7 @@ func StartServer() {
 	broadcast := func() {
 		wsLock.Lock()
 		defer wsLock.Unlock()
+		fmt.Printf("Broadcasting update to %d WebSocket clients\n", len(wsClients))
 		for c := range wsClients {
 			_ = c.WriteMessage(websocket.TextMessage, []byte("update"))
 		}
@@ -27,8 +29,10 @@ func StartServer() {
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := wsUpgrader.Upgrade(w, r, nil)
 		if err != nil {
+			fmt.Println("WebSocket upgrade error:", err)
 			return
 		}
+		fmt.Printf("WebSocket client connected: %s\n", r.RemoteAddr)
 		wsLock.Lock()
 		wsClients[conn] = true
 		wsLock.Unlock()
@@ -37,6 +41,7 @@ func StartServer() {
 			delete(wsClients, conn)
 			wsLock.Unlock()
 			conn.Close()
+			fmt.Printf("WebSocket client disconnected: %s\n", r.RemoteAddr)
 		}()
 		for {
 			if _, _, err := conn.ReadMessage(); err != nil {

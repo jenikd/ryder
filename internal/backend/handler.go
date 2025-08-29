@@ -480,7 +480,12 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 			m["players_a"] = []map[string]interface{}{}
 		} else {
 			playersA := []map[string]interface{}{}
-			for paRows.Next() { var n string; var hcp sql.NullFloat64; paRows.Scan(&n, &hcp); playersA = append(playersA, map[string]interface{}{ "name": n, "hcp": hcp.Float64 }) }
+			for paRows.Next() {
+				var n string
+				var hcp sql.NullFloat64
+				paRows.Scan(&n, &hcp)
+				playersA = append(playersA, map[string]interface{}{"name": n, "hcp": hcp.Float64})
+			}
 			paRows.Close()
 			m["players_a"] = playersA
 		}
@@ -489,7 +494,12 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 			m["players_b"] = []map[string]interface{}{}
 		} else {
 			playersB := []map[string]interface{}{}
-			for pbRows.Next() { var n string; var hcp sql.NullFloat64; pbRows.Scan(&n, &hcp); playersB = append(playersB, map[string]interface{}{ "name": n, "hcp": hcp.Float64 }) }
+			for pbRows.Next() {
+				var n string
+				var hcp sql.NullFloat64
+				pbRows.Scan(&n, &hcp)
+				playersB = append(playersB, map[string]interface{}{"name": n, "hcp": hcp.Float64})
+			}
 			pbRows.Close()
 			m["players_b"] = playersB
 		}
