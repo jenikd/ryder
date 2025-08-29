@@ -60,7 +60,9 @@ window.goToScore = function(matchId) {
 
 
 window.onload = function() {
+    console.log('Dashboard loaded');
     fetchDashboard();
+    console.log('Dashboard ws connecting');
     // WebSocket for live updates
     let wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
     let wsUrl = wsProto + '://' + window.location.host + '/ws';
