@@ -4,10 +4,56 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"github.com/joho/godotenv"
+	"github.com/gorilla/websocket"
 )
 
 func StartServer() {
+	mux := http.NewServeMux()
+	// --- WebSocket Hub ---
+	var wsUpgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+	var wsClients = make(map[*websocket.Conn]bool)
+	var wsLock sync.Mutex
+	broadcast := func() {
+		wsLock.Lock()
+		defer wsLock.Unlock()
+		for c := range wsClients {
+			_ = c.WriteMessage(websocket.TextMessage, []byte("update"))
+		}
+	}
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := wsUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		wsLock.Lock()
+		wsClients[conn] = true
+		wsLock.Unlock()
+		defer func() {
+			wsLock.Lock()
+			delete(wsClients, conn)
+			wsLock.Unlock()
+			conn.Close()
+		}()
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				break
+			}
+		}
+	})
+
+	// Wrap mutating endpoints to broadcast updates
+	wrapAndBroadcast := func(h http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			h(w, r)
+			if r.Method == http.MethodPost {
+				go broadcast()
+			}
+		}
+	}
 
 	// Load .env file if present
 	_ = godotenv.Load()
@@ -18,28 +64,27 @@ func StartServer() {
 	}
 	fmt.Printf("Starting backend server on port %s...\n", port)
 
-	mux := http.NewServeMux()
 	// Dashboard page (must be registered before /)
 	mux.HandleFunc("/dashboard", HandleMainPage)
 	mux.HandleFunc("/dashboard/", HandleMainPage)
 	// Main page
 	mux.HandleFunc("/", HandleMainPage)
 	// Player endpoints
-	mux.HandleFunc("/api/player/add", AddPlayer)
-	mux.HandleFunc("/api/player/edit", EditPlayer)
-	mux.HandleFunc("/api/player/remove", RemovePlayer)
+	mux.HandleFunc("/api/player/add", wrapAndBroadcast(AddPlayer))
+	mux.HandleFunc("/api/player/edit", wrapAndBroadcast(EditPlayer))
+	mux.HandleFunc("/api/player/remove", wrapAndBroadcast(RemovePlayer))
 	mux.HandleFunc("/api/player/list", ListPlayers)
 	// Team endpoints
-	mux.HandleFunc("/api/team/add", AddTeam)
-	mux.HandleFunc("/api/team/edit", EditTeam)
-	mux.HandleFunc("/api/team/remove", RemoveTeam)
+	mux.HandleFunc("/api/team/add", wrapAndBroadcast(AddTeam))
+	mux.HandleFunc("/api/team/edit", wrapAndBroadcast(EditTeam))
+	mux.HandleFunc("/api/team/remove", wrapAndBroadcast(RemoveTeam))
 	mux.HandleFunc("/api/team/list", ListTeams)
 	mux.HandleFunc("/api/team/assign", AssignPlayersToTeam)
 	mux.HandleFunc("/api/team/players", ListPlayersByTeam)
 	// Match endpoints
-	mux.HandleFunc("/api/match/add", AddMatch)
-	mux.HandleFunc("/api/match/edit", EditMatch)
-	mux.HandleFunc("/api/match/remove", RemoveMatch)
+	mux.HandleFunc("/api/match/add", wrapAndBroadcast(AddMatch))
+	mux.HandleFunc("/api/match/edit", wrapAndBroadcast(EditMatch))
+	mux.HandleFunc("/api/match/remove", wrapAndBroadcast(RemoveMatch))
 	mux.HandleFunc("/api/match/list", ListMatches)
 	mux.HandleFunc("/api/matches", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -49,13 +94,14 @@ func StartServer() {
 		// Handle other methods (GET, etc.) if needed
 	})
 	// Score endpoint
-	mux.HandleFunc("/api/score/submit", SubmitScore)
+	mux.HandleFunc("/api/score/submit", wrapAndBroadcast(SubmitScore))
 	// Dashboard
 	mux.HandleFunc("/api/dashboard", Dashboard)
 	// Match score endpoints
 	mux.HandleFunc("/api/match/score", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			SubmitMatchScore(w, r)
+			go broadcast()
 			return
 		}
 		if r.Method == http.MethodGet {
@@ -68,6 +114,7 @@ func StartServer() {
 	mux.HandleFunc("/api/match/holescore", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			SaveHoleResults(w, r)
+			go broadcast()
 			return
 		}
 		if r.Method == http.MethodGet {
@@ -80,6 +127,7 @@ func StartServer() {
 	mux.HandleFunc("/api/match/status", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			SetMatchStatus(w, r)
+			go broadcast()
 			return
 		}
 		w.WriteHeader(http.StatusMethodNotAllowed)

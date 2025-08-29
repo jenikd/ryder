@@ -58,10 +58,13 @@ window.goToScore = function(matchId) {
     window.location.href = `/static/score.html?match=${matchId}`;
 };
 
-window.onload = fetchDashboard;
 
-window.addEventListener('storage', function(e) {
-    if (e.key === 'ryder-dashboard-update') {
-        fetchDashboard();
-    }
-});
+window.onload = function() {
+    fetchDashboard();
+    // WebSocket for live updates
+    let wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    let ws = new WebSocket(wsProto + '://' + window.location.host + '/ws');
+    ws.onmessage = function(e) {
+        if (e.data === 'update') fetchDashboard();
+    };
+};
