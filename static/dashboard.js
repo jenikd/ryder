@@ -63,22 +63,35 @@ window.onload = function() {
     console.log('Dashboard loaded');
     fetchDashboard();
     console.log('Dashboard ws connecting');
-    // WebSocket for live updates
-    let wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    let wsUrl = wsProto + '://' + window.location.host + '/ws';
-    console.log('Connecting to WebSocket:', wsUrl);
-    let ws = new WebSocket(wsUrl);
-    ws.onopen = function() {
-        console.log('WebSocket connected');
+        setupWebSocket();
     };
-    ws.onclose = function() {
-        console.log('WebSocket disconnected');
-    };
-    ws.onerror = function(e) {
-        console.error('WebSocket error:', e);
-    };
-    ws.onmessage = function(e) {
-        console.log('WebSocket message:', e.data);
-        if (e.data === 'update') fetchDashboard();
-    };
+
+    function setupWebSocket() {
+        let wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        let wsUrl = wsProto + '://' + window.location.host + '/ws';
+        console.log('Connecting to WebSocket:', wsUrl);
+        let ws = new WebSocket(wsUrl);
+        let reconnectTimeout = null;
+
+        ws.onopen = function() {
+            console.log('WebSocket connected');
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = null;
+            }
+            // Manual update on reconnect
+            fetchDashboard();
+        };
+        ws.onclose = function() {
+            console.log('WebSocket disconnected, will attempt to reconnect in 2s');
+            reconnectTimeout = setTimeout(setupWebSocket, 2000);
+        };
+        ws.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+        ws.onmessage = function(e) {
+            console.log('WebSocket message:', e.data);
+            if (e.data === 'update') fetchDashboard();
+        };
+    }
 };
