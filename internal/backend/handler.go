@@ -456,6 +456,7 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 	defer teamRows.Close()
 	teams := []map[string]interface{}{}
 	teamScores := map[int]float64{}
+	projectedScores := map[int]float64{}
 	teamNames := map[int]string{}
 	for teamRows.Next() {
 		var id int
@@ -463,6 +464,7 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		teamRows.Scan(&id, &name)
 		teams = append(teams, map[string]interface{}{"id": id, "name": name, "score": 0.0})
 		teamScores[id] = 0.0
+		projectedScores[id] = 0.0
 		teamNames[id] = name
 	}
 	// 2. Get all finished matches and accumulate scores
@@ -523,11 +525,24 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 				if status == "completed" {
 					if a > b {
 						teamScores[ta]++
+						projectedScores[ta]++
 					} else if b > a {
 						teamScores[tb]++
+						projectedScores[tb]++
 					} else if a == b {
 						teamScores[ta] += 0.5
 						teamScores[tb] += 0.5
+						projectedScores[ta] += 0.5
+						projectedScores[tb] += 0.5
+					}
+				} else if status == "running" {
+					if a > b {
+						projectedScores[ta]++
+					} else if b > a {
+						projectedScores[tb]++
+					} else if a == b {
+						projectedScores[ta] += 0.5
+						projectedScores[tb] += 0.5
 					}
 				}
 				m["score_a"] = a
@@ -564,6 +579,7 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"teams":   teams,
 		"matches": grouped,
+		"projectedScores": projectedScores,
 	})
 }
 

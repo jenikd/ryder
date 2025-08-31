@@ -11,15 +11,19 @@ let pongTimeout = null;
 async function fetchDashboard() {
     const res = await fetch('/api/dashboard');
     const data = await res.json();
-    renderTeams(data.teams || []);
+    renderTeams(data.teams || [], data.projectedScores || {});
     renderMatches(data.matches || {});
 }
 
-function renderTeams(teams) {
+function renderTeams(teams, projectedScores) {
     const div = document.getElementById('teams');
     div.innerHTML = '';
     teams.forEach(t => {
-        div.innerHTML += `<div class="team">${t.name}: <b>${t.score}</b></div>`;
+        let proj = '';
+        if (projectedScores && projectedScores[t.id] !== undefined && projectedScores[t.id] !== t.score) {
+            proj = ` <span class="projected-score">(${projectedScores[t.id]})</span>`;
+        }
+        div.innerHTML += `<div class="team">${t.name}: <b>${t.score}</b>${proj}</div>`;
     });
 }
 
