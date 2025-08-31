@@ -151,8 +151,8 @@ function renderHoles() {
         row.innerHTML = `<span class="hole-label">Hole ${i+1}</span>` +
             `<span class="hole-score">
                 <button type="button" class="hole-btn" data-hole="${i}" data-val="A">${currentMatch.team_a.name}</button>
-                <button type="button" class="hole-btn" data-hole="${i}" data-val="B">${currentMatch.team_b.name}</button>
                 <button type="button" class="hole-btn" data-hole="${i}" data-val="AS">A/S</button>
+                <button type="button" class="hole-btn" data-hole="${i}" data-val="B">${currentMatch.team_b.name}</button>
             </span>`;
         holesDiv.appendChild(row);
     }
