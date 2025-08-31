@@ -454,17 +454,17 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer teamRows.Close()
-	teams := []map[string]interface{}{}
-	teamScores := map[int]int{}
+		teams := []map[string]interface{}{}
+		teamScores := map[int]float64{}
 	teamNames := map[int]string{}
-	for teamRows.Next() {
-		var id int
-		var name string
-		teamRows.Scan(&id, &name)
-		teams = append(teams, map[string]interface{}{"id": id, "name": name, "score": 0})
-		teamScores[id] = 0
-		teamNames[id] = name
-	}
+	   for teamRows.Next() {
+		   var id int
+		   var name string
+		   teamRows.Scan(&id, &name)
+		   teams = append(teams, map[string]interface{}{ "id": id, "name": name, "score": 0.0 })
+		   teamScores[id] = 0.0
+		   teamNames[id] = name
+	   }
 	// 2. Get all finished matches and accumulate scores
 	matchRows, _ := DB.Query("SELECT id, team_a_id, team_b_id, status FROM matches")
 	defer matchRows.Close()
@@ -523,9 +523,11 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 				if status == "completed" {
 					if a > b {
 						teamScores[ta]++
-					}
-					if b > a {
+					} else if b > a {
 						teamScores[tb]++
+					} else if a == b {
+						teamScores[ta] += 0.5
+						teamScores[tb] += 0.5
 					}
 				}
 				m["score_a"] = a
@@ -546,10 +548,10 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		matches = append(matches, m)
 	}
 	// Update team scores
-	for i := range teams {
-		id := teams[i]["id"].(int)
-		teams[i]["score"] = teamScores[id]
-	}
+	   for i := range teams {
+		   id := teams[i]["id"].(int)
+		   teams[i]["score"] = teamScores[id]
+	   }
 	// 3. Group matches by status, defaulting unknown/missing to 'prepared'
 	grouped := map[string][]map[string]interface{}{"completed": {}, "running": {}, "prepared": {}}
 	for _, m := range matches {

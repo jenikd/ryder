@@ -17,7 +17,19 @@
         .hole-row { display: flex; align-items: center; justify-content: space-between; background: #f3f7ff; border-radius: 8px; padding: 0.5rem 1rem; }
         .hole-label { font-weight: 700; }
         .hole-score { display: flex; gap: 0.5rem; }
-        .hole-score button { padding: 0.3rem 0.8rem; border-radius: 6px; border: 1px solid #bbb; background: #e2e8f0; cursor: pointer; font-weight: 700; }
+        .hole-score button {
+            padding: 0.5rem 0.8rem;
+            border-radius: 6px;
+            border: 1px solid #bbb;
+            background: #e2e8f0;
+            cursor: pointer;
+            font-weight: 700;
+            min-width: 80px;
+            max-width: 100px;
+            height: 2.4em;
+            box-sizing: border-box;
+            display: inline-block;
+        }
         .hole-score button.selected { background: #2563eb; color: #fff; border: 1px solid #2563eb; }
         @media (max-width: 600px) { .container { padding: 1rem 0.2rem; } }
     </style>
