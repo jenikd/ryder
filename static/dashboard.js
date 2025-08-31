@@ -56,14 +56,23 @@ function matchRow(m) {
     const right = playerList(m.players_b);
     let format = m.format ? m.format.charAt(0).toUpperCase() + m.format.slice(1).replace('_', ' ') : '';
     let score = '';
+    let scoreHtml = '';
     if ((m.status === 'completed' || m.status === 'running') && m.score_text) {
-        score = ` | ${m.score_text}`;
+        // Split score_text into team and score if possible
+        const match = m.score_text.match(/^(.*?) (\d+ Up)$/);
+        if (match) {
+            scoreHtml = `<div class='score-team'>${match[1]}</div><div class='score-value'>${match[2]}</div>`;
+        } else if (m.score_text === 'A/S') {
+            scoreHtml = `<div class='score-team'>All Square</div>`;
+        } else {
+            scoreHtml = `<div class='score-team'>${m.score_text}</div>`;
+        }
     }
     // Split players and score into columns for alignment
     return `<li><span class="match-link" onclick="goToScore(${m.id})">
         <span class='match-format'>${format}</span>
         <span class='match-players'>${left} / ${right}</span>
-        <span class='match-score'>${score ? score.replace(' | ','') : ''}</span>
+        <span class='match-score'>${scoreHtml}</span>
     </span></li>`;
 }
 
