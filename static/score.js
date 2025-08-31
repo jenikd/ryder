@@ -160,7 +160,12 @@ function renderHoles() {
         btn.onclick = function() {
             const hole = parseInt(this.getAttribute('data-hole'));
             const val = this.getAttribute('data-val');
-            holeResults[hole] = val;
+            if (holeResults[hole] === val) {
+                // Unset if already selected
+                holeResults[hole] = undefined;
+            } else {
+                holeResults[hole] = val;
+            }
             updateHoleButtons(hole);
             updateMatchScoreDisplay();
             saveHoleResults();
