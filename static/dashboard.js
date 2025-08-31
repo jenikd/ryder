@@ -75,7 +75,7 @@ function matchRow(m) {
     // Split players and score into columns for alignment
     return `<li><span class="match-link" onclick="goToScore(${m.id})">
         <span class='match-format'>${format}</span>
-        <span class='match-players'>${left} / ${right}</span>
+        <span class='match-players'>${left}<br>${right}</span>
         <span class='match-score'>${scoreHtml}</span>
     </span></li>`;
 }
