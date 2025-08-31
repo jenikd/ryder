@@ -98,7 +98,12 @@ async function showMatchScoreSection() {
         btn.onclick = async function() {
             if (!currentMatch) return;
             if (currentMatch.status === 'completed') {
-                await setMatchStatus('prepared');
+                // If any hole is set, set to running, else prepared
+                if (holeResults.some(v => v === 'A' || v === 'B' || v === 'AS')) {
+                    await setMatchStatus('running');
+                } else {
+                    await setMatchStatus('prepared');
+                }
             } else {
                 await setMatchStatus('completed');
             }
