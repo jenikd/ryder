@@ -34,6 +34,7 @@ func autoMigrate(db *sql.DB) {
 			team_b_id INTEGER,
 			format TEXT NOT NULL,
 			status TEXT NOT NULL,
+			holes TEXT DEFAULT '18',
 			FOREIGN KEY (team_a_id) REFERENCES teams(id),
 			FOREIGN KEY (team_b_id) REFERENCES teams(id)
 		);`,
@@ -69,6 +70,8 @@ func autoMigrate(db *sql.DB) {
 
 	// Add HCP column if not exists
 	_, _ = db.Exec("ALTER TABLE players ADD COLUMN hcp REAL;")
+	// Add holes column if not exists
+	_, _ = db.Exec("ALTER TABLE matches ADD COLUMN holes TEXT DEFAULT '18';")
 }
 
 func main() {

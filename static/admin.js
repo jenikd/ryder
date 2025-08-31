@@ -1,3 +1,29 @@
+// --- Edit Match Handler ---
+window.editMatch = async function(matchId) {
+    // Fetch match list and find the match by ID
+    const res = await fetch('/api/match/list');
+    if (!res.ok) return;
+    const data = await res.json();
+    const match = (data.matches || []).find(m => m.id === matchId);
+    if (!match) return;
+    // Populate form fields
+    document.getElementById('match-id').value = match.id;
+    document.getElementById('match-format').value = match.format;
+    document.getElementById('match-team-a').value = match.team_a.id;
+    document.getElementById('match-team-b').value = match.team_b.id;
+    document.getElementById('match-holes').value = match.holes || '18';
+    await updateMatchPlayersSelects();
+    // Set selected players for each team
+    const playersASelect = document.getElementById('match-players-a');
+    const playersBSelect = document.getElementById('match-players-b');
+    Array.from(playersASelect.options).forEach(opt => {
+        opt.selected = (match.team_a.players || []).some(p => p.id === parseInt(opt.value));
+    });
+    Array.from(playersBSelect.options).forEach(opt => {
+        opt.selected = (match.team_b.players || []).some(p => p.id === parseInt(opt.value));
+    });
+    document.querySelector('#match-form button').textContent = 'Save Match';
+};
 // Ryder Admin Panel JS
 
 // --- Players ---
@@ -251,6 +277,7 @@ async function populateMatchForm() {
 document.getElementById('match-form').onsubmit = async function(e) {
     e.preventDefault();
     const format = document.getElementById('match-format').value;
+    const holes = document.getElementById('match-holes').value;
     const teamA = parseInt(document.getElementById('match-team-a').value);
     const teamB = parseInt(document.getElementById('match-team-b').value);
     const playersA = Array.from(document.getElementById('match-players-a').selectedOptions).map(opt => parseInt(opt.value));
@@ -258,7 +285,7 @@ document.getElementById('match-form').onsubmit = async function(e) {
     await fetch('/api/match/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ format, team_a: teamA, team_b: teamB, players_a: playersA, players_b: playersB })
+        body: JSON.stringify({ format, holes, team_a: teamA, team_b: teamB, players_a: playersA, players_b: playersB })
     });
     this.reset();
     fetchMatches();
@@ -278,4 +305,9 @@ window.onload = function() {
     document.querySelector('#player-form button').textContent = 'Add Player';
     document.querySelector('#team-form button').textContent = 'Add Team';
     document.querySelector('#match-form button').textContent = 'Add Match';
+};
+
+window.removeMatch = async function(matchId) {
+    await fetch(`/api/match/remove?id=${matchId}`);
+    fetchMatches();
 };

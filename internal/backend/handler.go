@@ -111,6 +111,7 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 	type Match struct {
 		ID     int    `json:"id"`
 		Format string `json:"format"`
+		Holes  string `json:"holes"`
 		Status string `json:"status"`
 		TeamA  struct {
 			ID      int           `json:"id"`
@@ -123,7 +124,7 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 			Players []MatchPlayer `json:"players"`
 		} `json:"team_b"`
 	}
-	rows, err := DB.Query(`SELECT m.id, m.format, m.status, ta.id, ta.name, tb.id, tb.name FROM matches m JOIN teams ta ON m.team_a_id=ta.id JOIN teams tb ON m.team_b_id=tb.id`)
+	rows, err := DB.Query(`SELECT m.id, m.format, m.holes, m.status, ta.id, ta.name, tb.id, tb.name FROM matches m JOIN teams ta ON m.team_a_id=ta.id JOIN teams tb ON m.team_b_id=tb.id`)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -134,7 +135,7 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 		var m Match
 		var taID, tbID int
 		var taName, tbName string
-		if err := rows.Scan(&m.ID, &m.Format, &m.Status, &taID, &taName, &tbID, &tbName); err != nil {
+		if err := rows.Scan(&m.ID, &m.Format, &m.Holes, &m.Status, &taID, &taName, &tbID, &tbName); err != nil {
 			continue
 		}
 		m.TeamA.ID, m.TeamA.Name = taID, taName
@@ -353,6 +354,7 @@ func AssignPlayerToTeam(w http.ResponseWriter, r *http.Request) {
 func AddMatch(w http.ResponseWriter, r *http.Request) {
 	type req struct {
 		Format   string `json:"format"`
+		Holes    string `json:"holes"`
 		TeamA    int    `json:"team_a"`
 		TeamB    int    `json:"team_b"`
 		PlayersA []int  `json:"players_a"`
@@ -363,7 +365,7 @@ func AddMatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	res, err := DB.Exec("INSERT INTO matches (team_a_id, team_b_id, format, status) VALUES (?, ?, ?, ?)", body.TeamA, body.TeamB, body.Format, "prepared")
+	res, err := DB.Exec("INSERT INTO matches (team_a_id, team_b_id, format, status, holes) VALUES (?, ?, ?, ?, ?)", body.TeamA, body.TeamB, body.Format, "prepared", body.Holes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -384,7 +386,17 @@ func EditMatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveMatch(w http.ResponseWriter, r *http.Request) {
-	// ...remove match...
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		http.Error(w, "Invalid match id", http.StatusBadRequest)
+		return
+	}
+	_, err = DB.Exec("DELETE FROM matches WHERE id=?", id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -577,8 +589,8 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		grouped[status] = append(grouped[status], m)
 	}
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"teams":   teams,
-		"matches": grouped,
+		"teams":           teams,
+		"matches":         grouped,
 		"projectedScores": projectedScores,
 	})
 }
