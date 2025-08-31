@@ -76,7 +76,7 @@ func StartServer() {
 	// Dashboard page (must be registered before /)
 	mux.HandleFunc("/dashboard", HandleMainPage)
 	mux.HandleFunc("/dashboard/", HandleMainPage)
-	// Main page
+	// Main page (dashboard as homepage)
 	mux.HandleFunc("/", HandleMainPage)
 	// Player endpoints
 	mux.HandleFunc("/api/player/add", wrapAndBroadcast(AddPlayer))

@@ -59,7 +59,12 @@ function matchRow(m) {
     if ((m.status === 'completed' || m.status === 'running') && m.score_text) {
         score = ` | ${m.score_text}`;
     }
-    return `<li><span class="match-link" onclick="goToScore(${m.id})">${format}: ${left} / ${right}</span>${score}<span class="status"> [${m.status}]</span></li>`;
+    // Split players and score into columns for alignment
+    return `<li><span class="match-link" onclick="goToScore(${m.id})">
+        <span class='match-format'>${format}</span>
+        <span class='match-players'>${left} / ${right}</span>
+        <span class='match-score'>${score ? score.replace(' | ','') : ''}</span>
+    </span></li>`;
 }
 
 window.goToScore = function(matchId) {
