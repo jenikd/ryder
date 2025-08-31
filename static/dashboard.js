@@ -1,5 +1,11 @@
 let ws = null;
 let wsConnected = false;
+let pingInterval = null;
+let pongTimeout = null;
+
+// Periodically check WebSocket connection and reconnect if needed
+
+// Remove old interval check, use ping/pong instead
 // Ryder Cup Dashboard
 
 async function fetchDashboard() {
@@ -90,10 +96,25 @@ function setupWebSocket() {
         }
         // Manual update on reconnect
         fetchDashboard();
+        // Start ping interval
+        if (pingInterval) clearInterval(pingInterval);
+        pingInterval = setInterval(function() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send('ping');
+                // Set pong timeout
+                if (pongTimeout) clearTimeout(pongTimeout);
+                pongTimeout = setTimeout(function() {
+                    console.warn('Pong not received, closing WebSocket and reconnecting');
+                    ws.close();
+                }, 4000);
+            }
+        }, 5000);
     };
     ws.onclose = function() {
         wsConnected = false;
         console.log('WebSocket disconnected, will attempt to reconnect in 2s');
+        if (pingInterval) clearInterval(pingInterval);
+        if (pongTimeout) clearTimeout(pongTimeout);
         reconnectTimeout = setTimeout(setupWebSocket, 2000);
     };
     ws.onerror = function(e) {
@@ -102,6 +123,10 @@ function setupWebSocket() {
     };
     ws.onmessage = function(e) {
         console.log('WebSocket message:', e.data);
+        if (e.data === 'pong') {
+            if (pongTimeout) clearTimeout(pongTimeout);
+            return;
+        }
         if (e.data === 'update') fetchDashboard();
     };
 }

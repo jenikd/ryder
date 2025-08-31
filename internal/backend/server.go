@@ -44,8 +44,12 @@ func StartServer() {
 			fmt.Printf("WebSocket client disconnected: %s\n", r.RemoteAddr)
 		}()
 		for {
-			if _, _, err := conn.ReadMessage(); err != nil {
+			mt, msg, err := conn.ReadMessage()
+			if err != nil {
 				break
+			}
+			if mt == websocket.TextMessage && string(msg) == "ping" {
+				_ = conn.WriteMessage(websocket.TextMessage, []byte("pong"))
 			}
 		}
 	})
