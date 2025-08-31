@@ -24,6 +24,7 @@
 </head>
 <body>
     <div class="container">
+        <div class="score pinned-score" id="match-score"></div>
         <h1>Enter Match Score</h1>
         <div id="match-select-section">
             <label for="match-select">Select Match:</label>
@@ -35,7 +36,6 @@
                     <span id="team-a"></span>
                     <span id="team-b"></span>
                 </div>
-                <div class="score" id="match-score"></div>
             </div>
             <h2>Holes</h2>
             <div class="holes" id="holes-list"></div>
@@ -44,5 +44,18 @@
             </div>
         </div>
     </div>
+    <style>
+        .pinned-score {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(37,99,235,0.07);
+            padding: 0.7rem 0 0.7rem 0;
+            margin-bottom: 1.2rem;
+            text-align: center;
+            border: 3px solid #000;
+        }
+    </style>
 </body>
 </html>

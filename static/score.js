@@ -122,6 +122,15 @@ function renderHoles() {
     const holesDiv = document.getElementById('holes-list');
     holesDiv.innerHTML = '';
     for (let i = 0; i < 18; i++) {
+        if (i === 9) {
+            // Add empty row for visual division after 9th hole
+            const emptyRow = document.createElement('div');
+            emptyRow.className = 'hole-row hole-divider';
+            emptyRow.style.height = '1.5em';
+            emptyRow.style.background = 'transparent';
+            emptyRow.style.border = 'none';
+            holesDiv.appendChild(emptyRow);
+        }
         const row = document.createElement('div');
         row.className = 'hole-row';
         row.innerHTML = `<span class="hole-label">Hole ${i+1}</span>` +
