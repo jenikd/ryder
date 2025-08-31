@@ -92,6 +92,7 @@ async function showMatchScoreSection() {
     renderHoles();
     updateMatchScoreDisplay();
     updateFinishButton();
+    renderMatchTitle();
     // Register finish button event every time section is shown
     const btn = document.getElementById('finish-btn');
     if (btn) {
@@ -126,8 +127,17 @@ async function loadMatchStatus() {
 function renderHoles() {
     const holesDiv = document.getElementById('holes-list');
     holesDiv.innerHTML = '';
-    for (let i = 0; i < 18; i++) {
-        if (i === 9) {
+    // Determine which holes to show based on match type
+    let start = 0, end = 18, showDivider = false;
+    if (currentMatch && currentMatch.holes === 'front9') {
+        start = 0; end = 9; showDivider = false;
+    } else if (currentMatch && currentMatch.holes === 'back9') {
+        start = 9; end = 18; showDivider = false;
+    } else {
+        showDivider = true;
+    }
+    for (let i = start; i < end; i++) {
+        if (showDivider && i === 9) {
             // Add empty row for visual division after 9th hole
             const emptyRow = document.createElement('div');
             emptyRow.className = 'hole-row hole-divider';
@@ -157,7 +167,7 @@ function renderHoles() {
         };
     });
     // Restore selection if any
-    for (let i = 0; i < 18; i++) updateHoleButtons(i);
+    for (let i = start; i < end; i++) updateHoleButtons(i);
 }
 
 function updateHoleButtons(hole) {
@@ -275,9 +285,33 @@ function updateFinishButton() {
     }
 }
 
-// Patch showMatchScoreSection to also enable/disable scoring
-const origShowMatchScoreSection = showMatchScoreSection;
-showMatchScoreSection = async function() {
-    await origShowMatchScoreSection();
-    setScoringEnabled(currentMatch && currentMatch.status !== 'completed');
-};
+function renderMatchTitle() {
+    const title = document.getElementById('match-title');
+    if (!title || !currentMatch) return;
+    let typeText = '';
+    if (currentMatch.holes === 'front9') {
+        typeText = 'Front 9';
+    } else if (currentMatch.holes === 'back9') {
+        typeText = 'Back 9';
+    } else {
+        typeText = '18 Holes';
+    }
+    // Optionally append format (singles, foursome, etc.)
+    if (currentMatch.format) {
+        typeText += ' - ' + currentMatch.format.charAt(0).toUpperCase() + currentMatch.format.slice(1);
+    }
+    title.textContent = typeText;
+}
+
+// Call renderMatchTitle() after loading match data
+function loadMatch(matchId) {
+    fetch(`/api/match?id=${matchId}`)
+        .then(r => r.json())
+        .then(data => {
+            currentMatch = data.match;
+            renderMatchTitle();
+            renderHoles();
+            updateMatchScoreDisplay();
+            updateFinishButton();
+        });
+}
