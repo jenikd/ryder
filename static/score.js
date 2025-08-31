@@ -1,3 +1,61 @@
+// --- WebSocket live update and liveness check ---
+let ws = null;
+let wsConnected = false;
+let pingInterval = null;
+let pongTimeout = null;
+
+function setupWebSocket() {
+    let wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    let wsUrl = wsProto + '://' + window.location.host + '/ws';
+    console.log('Connecting to WebSocket:', wsUrl);
+    ws = new WebSocket(wsUrl);
+    let reconnectTimeout = null;
+
+    ws.onopen = function() {
+        wsConnected = true;
+        console.log('WebSocket connected');
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
+        // Manual update on reconnect
+        if (currentMatch) showMatchScoreSection();
+        // Start ping interval
+        if (pingInterval) clearInterval(pingInterval);
+        pingInterval = setInterval(function() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send('ping');
+                // Set pong timeout
+                if (pongTimeout) clearTimeout(pongTimeout);
+                pongTimeout = setTimeout(function() {
+                    console.warn('Pong not received, closing WebSocket and reconnecting');
+                    ws.close();
+                }, 4000);
+            }
+        }, 5000);
+    };
+    ws.onclose = function() {
+        wsConnected = false;
+        console.log('WebSocket disconnected, will attempt to reconnect in 2s');
+        if (pingInterval) clearInterval(pingInterval);
+        if (pongTimeout) clearTimeout(pongTimeout);
+        reconnectTimeout = setTimeout(setupWebSocket, 2000);
+    };
+    ws.onerror = function(e) {
+        wsConnected = false;
+        console.error('WebSocket error:', e);
+    };
+    ws.onmessage = function(e) {
+        console.log('WebSocket message:', e.data);
+        if (e.data === 'pong') {
+            if (pongTimeout) clearTimeout(pongTimeout);
+            return;
+        }
+        if (e.data === 'update') {
+            if (currentMatch) showMatchScoreSection();
+        }
+    };
+}
 // Ryder Score Entry Page
 
 let matches = [];
@@ -173,6 +231,14 @@ function getQueryParam(name) {
 
 window.onload = async function() {
     await fetchMatches();
+    setupWebSocket();
+    window.onfocus = function() {
+        if (!wsConnected) {
+            console.log('Window focused: WebSocket not connected, reconnecting and updating match');
+            setupWebSocket();
+            if (currentMatch) showMatchScoreSection();
+        }
+    };
     const matchId = getQueryParam('match');
     if (matchId) {
         currentMatch = matches.find(m => m.id == matchId);
