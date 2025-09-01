@@ -614,6 +614,11 @@ func HandleMainPage(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "."+r.URL.Path)
 		return
 	}
+	// Serve images from /img/
+	if len(r.URL.Path) > 5 && r.URL.Path[:5] == "/img/" {
+		http.ServeFile(w, r, "."+r.URL.Path)
+		return
+	}
 	http.ServeFile(w, r, "static/index.html")
 }
 
