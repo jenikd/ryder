@@ -148,7 +148,7 @@ function renderHoles() {
         }
         const row = document.createElement('div');
         row.className = 'hole-row';
-        row.innerHTML = `<span class="hole-label">Hole ${i+1}</span>` +
+        row.innerHTML = `<span class="hole-label">${i+1}</span>` +
             `<span class="hole-score">
                 <button type="button" class="hole-btn" data-hole="${i}" data-val="A">${currentMatch.team_a.name}</button>
                 <button type="button" class="hole-btn" data-hole="${i}" data-val="AS">A/S</button>
