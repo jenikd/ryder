@@ -59,8 +59,19 @@ function matchRow(m) {
     const left = playerList(m.players_a);
     const right = playerList(m.players_b);
     let format = m.format ? m.format.charAt(0).toUpperCase() + m.format.slice(1).replace('_', ' ') : '';
-    let score = '';
     let scoreHtml = '';
+    let holesLeft = null;
+    // Determine holes to play based on format and holeResults
+    if (m.status === 'running' && m.holeResults && m.holes) {
+        let start = 0, end = 18;
+        if (m.holes === 'front9') { start = 0; end = 9; }
+        else if (m.holes === 'back9') { start = 9; end = 18; }
+        let count = 0;
+        for (let i = start; i < end; i++) {
+            if (!m.holeResults[i]) count++;
+        }
+        holesLeft = count;
+    }
     if ((m.status === 'completed' || m.status === 'running') && m.score_text) {
         // Split score_text into team and score if possible
         const match = m.score_text.match(/^(.*?) (\d+ Up)$/);
@@ -70,6 +81,9 @@ function matchRow(m) {
             scoreHtml = `<div class='score-team'>All Square</div>`;
         } else {
             scoreHtml = `<div class='score-team'>${m.score_text}</div>`;
+        }
+        if (holesLeft !== null) {
+            scoreHtml += `<div class='score-holes-left'>(${holesLeft} to play)</div>`;
         }
     }
     // Split players and score into columns for alignment
@@ -123,7 +137,7 @@ function setupWebSocket() {
                 if (pongTimeout) clearTimeout(pongTimeout);
                 pongTimeout = setTimeout(function() {
                     console.warn('Pong not received, closing WebSocket and reconnecting');
-                    ws.close();
+                ws.close();
                 }, 4000);
             }
         }, 5000);

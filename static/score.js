@@ -188,7 +188,13 @@ function updateHoleButtons(hole) {
 function updateMatchScoreDisplay() {
     // Calculate up/down or A/S
     let aUp = 0, bUp = 0;
-    for (let i = 0; i < 18; i++) {
+    let start = 0, end = 18;
+    if (currentMatch && currentMatch.holes === 'front9') {
+        start = 0; end = 9;
+    } else if (currentMatch && currentMatch.holes === 'back9') {
+        start = 9; end = 18;
+    }
+    for (let i = start; i < end; i++) {
         if (holeResults[i] === 'A') aUp++;
         else if (holeResults[i] === 'B') bUp++;
     }
@@ -196,6 +202,12 @@ function updateMatchScoreDisplay() {
     if (aUp > bUp) scoreText = `${currentMatch.team_a.name} ${aUp-bUp} Up`;
     else if (bUp > aUp) scoreText = `${currentMatch.team_b.name} ${bUp-aUp} Up`;
     else scoreText = 'All Square';
+    // Count holes still to play
+    let holesLeft = 0;
+    for (let i = start; i < end; i++) {
+        if (!holeResults[i]) holesLeft++;
+    }
+    scoreText += `  (${holesLeft} to play)`;
     document.getElementById('match-score').textContent = scoreText;
 }
 

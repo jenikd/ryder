@@ -517,6 +517,25 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 			pbRows.Close()
 			m["players_b"] = playersB
 		}
+		// Add per-hole results for this match
+		holeResults := make([]string, 18)
+		hrRows, err := DB.Query("SELECT hole, result FROM hole_results WHERE match_id=?", id)
+		if err == nil {
+			for hrRows.Next() {
+				var hole int
+				var result string
+				hrRows.Scan(&hole, &result)
+				if hole >= 1 && hole <= 18 {
+					holeResults[hole-1] = result
+				}
+			}
+			hrRows.Close()
+		}
+		m["holeResults"] = holeResults
+		// Add holes type (18, front9, back9) to match object
+		var holesType string
+		_ = DB.QueryRow("SELECT holes FROM matches WHERE id=?", id).Scan(&holesType)
+		m["holes"] = holesType
 		// Get per-match winner if finished, or current score if running
 		if status == "completed" || status == "running" {
 			rows, err := DB.Query("SELECT result, COUNT(*) FROM hole_results WHERE match_id=? GROUP BY result", id)
