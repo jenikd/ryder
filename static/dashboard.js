@@ -130,10 +130,10 @@ function setupWebSocket() {
     };
     ws.onclose = function() {
         wsConnected = false;
-        console.log('WebSocket disconnected, will attempt to reconnect in 2s');
+        console.log('WebSocket disconnected, will attempt to reconnect in 1/2s');
         if (pingInterval) clearInterval(pingInterval);
         if (pongTimeout) clearTimeout(pongTimeout);
-        reconnectTimeout = setTimeout(setupWebSocket, 2000);
+        reconnectTimeout = setTimeout(setupWebSocket, 500);
     };
     ws.onerror = function(e) {
         wsConnected = false;
