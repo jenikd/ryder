@@ -285,6 +285,7 @@ window.onload = async function() {
         }
     }
     if (pinnedScore) {
+        // Desktop: count clicks
         pinnedScore.addEventListener('click', function() {
             clickCount++;
             if (clickCount === 1) {
@@ -295,15 +296,22 @@ window.onload = async function() {
                 resetClicks();
             }
         });
-        // For touch devices
+        // Mobile: count completed taps only
+        let tapRegistered = false;
         pinnedScore.addEventListener('touchstart', function(e) {
-            clickCount++;
-            if (clickCount === 1) {
-                clickTimer = setTimeout(resetClicks, 3000);
-            }
-            if (clickCount === 3) {
-                enableScoring();
-                resetClicks();
+            tapRegistered = false;
+        });
+        pinnedScore.addEventListener('touchend', function(e) {
+            if (!tapRegistered) {
+                tapRegistered = true;
+                clickCount++;
+                if (clickCount === 1) {
+                    clickTimer = setTimeout(resetClicks, 3000);
+                }
+                if (clickCount === 3) {
+                    enableScoring();
+                    resetClicks();
+                }
             }
         });
     }
