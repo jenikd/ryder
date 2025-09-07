@@ -61,6 +61,7 @@ function setupWebSocket() {
 let matches = [];
 let currentMatch = null;
 let holeResults = Array(18).fill(null); // 'A', 'B', 'AS'
+sEnabled = false;
 
 async function fetchMatches() {
     const res = await fetch('/api/match/list');
@@ -136,27 +137,29 @@ function renderHoles() {
         row.className = 'hole-row';
         row.innerHTML = `<span class="hole-label">${i+1}</span>` +
             `<span class="hole-score">
-                <button type="button" class="hole-btn" data-hole="${i}" data-val="A">${currentMatch.team_a.name}</button>
-                <button type="button" class="hole-btn" data-hole="${i}" data-val="AS">A/S</button>
-                <button type="button" class="hole-btn" data-hole="${i}" data-val="B">${currentMatch.team_b.name}</button>
+            <button type="button" class="hole-btn" data-hole="${i}" data-val="A">${currentMatch.team_a.name}</button>
+            <button type="button" class="hole-btn" data-hole="${i}" data-val="AS">A/S</button>
+            <button type="button" class="hole-btn" data-hole="${i}" data-val="B">${currentMatch.team_b.name}</button>
             </span>`;
         holesDiv.appendChild(row);
     }
-    document.querySelectorAll('.hole-btn').forEach(btn => {
-        btn.onclick = function() {
-            const hole = parseInt(this.getAttribute('data-hole'));
-            const val = this.getAttribute('data-val');
-            if (holeResults[hole] === val) {
-                // Unset if already selected
-                holeResults[hole] = undefined;
-            } else {
-                holeResults[hole] = val;
-            }
-            updateHoleButtons(hole);
-            updateMatchScoreDisplay();
-            saveHoleResults();
-        };
-    });
+    if (sEnabled) {
+        document.querySelectorAll('.hole-btn').forEach(btn => {
+            btn.onclick = function() {
+                const hole = parseInt(this.getAttribute('data-hole'));
+                const val = this.getAttribute('data-val');
+                if (holeResults[hole] === val) {
+                    // Unset if already selected
+                    holeResults[hole] = undefined;
+                } else {
+                    holeResults[hole] = val;
+                }
+                updateHoleButtons(hole);
+                updateMatchScoreDisplay();
+                saveHoleResults();
+            };
+        });
+    }   
     // Restore selection if any
     for (let i = start; i < end; i++) updateHoleButtons(i);
 }
@@ -259,6 +262,46 @@ function getQueryParam(name) {
 window.onload = async function() {
     await fetchMatches();
     setupWebSocket();
+    renderScoringEnabled();
+        // Disable scoring and finish button by default
+        sEnabled = false;
+        const finishBtn = document.getElementById('finish-btn');
+        if (finishBtn) finishBtn.disabled = true;
+        // Enable scoring only after click-and-hold on pinned score for 5s
+        let holdTimeout = null;
+        const pinnedScore = document.getElementById('match-score');
+        if (pinnedScore) {
+            pinnedScore.addEventListener('mousedown', function() {
+                holdTimeout = setTimeout(() => {
+                    sEnabled = true;
+                    if (finishBtn) finishBtn.disabled = false;
+                    console.log('Scoring enabled');
+                    renderHoles();
+                    renderScoringEnabled();
+                }, 3000);
+            });
+            pinnedScore.addEventListener('mouseup', function() {
+                if (holdTimeout) clearTimeout(holdTimeout);
+            });
+            pinnedScore.addEventListener('mouseleave', function() {
+                if (holdTimeout) clearTimeout(holdTimeout);
+            });
+            // For touch devices
+            pinnedScore.addEventListener('touchstart', function() {
+                holdTimeout = setTimeout(() => {
+                    sEnabled = true;
+                    if (finishBtn) finishBtn.disabled = false;
+                    renderHoles();
+                    renderScoringEnabled();
+                }, 3000);
+            });
+            pinnedScore.addEventListener('touchend', function() {
+                if (holdTimeout) clearTimeout(holdTimeout);
+            });
+            pinnedScore.addEventListener('touchcancel', function() {
+                if (holdTimeout) clearTimeout(holdTimeout);
+            });
+        }
     window.onfocus = function() {
         if (!wsConnected) {
             console.log('Window focused: WebSocket not connected, reconnecting and updating match');
@@ -305,6 +348,17 @@ function renderMatchTitle() {
     }
     title.textContent = typeText;
 }
+
+function renderScoringEnabled() {
+    const se = document.getElementById('scoring-enabled');
+    if (!se) return;
+    if (sEnabled) {
+        se.textContent = 'Scoring Enabled';
+        se.style.color = 'green';
+    } else {
+        se.textContent = '';
+    }
+}   
 
 // Call renderMatchTitle() after loading match data
 function loadMatch(matchId) {
