@@ -291,7 +291,7 @@ window.onload = async function() {
             if (clickCount === 1) {
                 clickTimer = setTimeout(resetClicks, 3000);
             }
-            if (clickCount === 3) {
+            if (clickCount === 5) {
                 enableScoring();
                 resetClicks();
             }
@@ -308,7 +308,7 @@ window.onload = async function() {
                 if (clickCount === 1) {
                     clickTimer = setTimeout(resetClicks, 3000);
                 }
-                if (clickCount === 3) {
+                if (clickCount === 5) {
                     enableScoring();
                     resetClicks();
                 }
