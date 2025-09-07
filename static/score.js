@@ -263,45 +263,50 @@ window.onload = async function() {
     await fetchMatches();
     setupWebSocket();
     renderScoringEnabled();
-        // Disable scoring and finish button by default
-        sEnabled = false;
-        const finishBtn = document.getElementById('finish-btn');
-        if (finishBtn) finishBtn.disabled = true;
-        // Enable scoring only after click-and-hold on pinned score for 5s
-        let holdTimeout = null;
-        const pinnedScore = document.getElementById('match-score');
-        if (pinnedScore) {
-            pinnedScore.addEventListener('mousedown', function() {
-                holdTimeout = setTimeout(() => {
-                    sEnabled = true;
-                    if (finishBtn) finishBtn.disabled = false;
-                    console.log('Scoring enabled');
-                    renderHoles();
-                    renderScoringEnabled();
-                }, 3000);
-            });
-            pinnedScore.addEventListener('mouseup', function() {
-                if (holdTimeout) clearTimeout(holdTimeout);
-            });
-            pinnedScore.addEventListener('mouseleave', function() {
-                if (holdTimeout) clearTimeout(holdTimeout);
-            });
-            // For touch devices
-            pinnedScore.addEventListener('touchstart', function() {
-                holdTimeout = setTimeout(() => {
-                    sEnabled = true;
-                    if (finishBtn) finishBtn.disabled = false;
-                    renderHoles();
-                    renderScoringEnabled();
-                }, 3000);
-            });
-            pinnedScore.addEventListener('touchend', function() {
-                if (holdTimeout) clearTimeout(holdTimeout);
-            });
-            pinnedScore.addEventListener('touchcancel', function() {
-                if (holdTimeout) clearTimeout(holdTimeout);
-            });
+    // Disable scoring and finish button by default
+    sEnabled = false;
+    const finishBtn = document.getElementById('finish-btn');
+    if (finishBtn) finishBtn.disabled = true;
+    // Enable scoring only after 3 clicks on pinned score within 3 seconds
+    let clickCount = 0;
+    let clickTimer = null;
+    const pinnedScore = document.getElementById('match-score');
+    function enableScoring() {
+        sEnabled = true;
+        if (finishBtn) finishBtn.disabled = false;
+        renderHoles();
+        renderScoringEnabled();
+    }
+    function resetClicks() {
+        clickCount = 0;
+        if (clickTimer) {
+            clearTimeout(clickTimer);
+            clickTimer = null;
         }
+    }
+    if (pinnedScore) {
+        pinnedScore.addEventListener('click', function() {
+            clickCount++;
+            if (clickCount === 1) {
+                clickTimer = setTimeout(resetClicks, 3000);
+            }
+            if (clickCount === 3) {
+                enableScoring();
+                resetClicks();
+            }
+        });
+        // For touch devices
+        pinnedScore.addEventListener('touchstart', function(e) {
+            clickCount++;
+            if (clickCount === 1) {
+                clickTimer = setTimeout(resetClicks, 3000);
+            }
+            if (clickCount === 3) {
+                enableScoring();
+                resetClicks();
+            }
+        });
+    }
     window.onfocus = function() {
         if (!wsConnected) {
             console.log('Window focused: WebSocket not connected, reconnecting and updating match');
