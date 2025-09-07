@@ -66,24 +66,10 @@ async function fetchMatches() {
     const res = await fetch('/api/match/list');
     const data = await res.json();
     matches = data.matches || [];
-    const sel = document.getElementById('match-select');
-    sel.innerHTML = '<option value="">-- Select Match --</option>';
-    matches.forEach(m => {
-        sel.innerHTML += `<option value="${m.id}">${m.format.toUpperCase()} | ${m.team_a.name} vs ${m.team_b.name}</option>`;
-    });
 }
-
-document.getElementById('match-select').onchange = function() {
-    const id = parseInt(this.value);
-    if (!id) return;
-    currentMatch = matches.find(m => m.id === id);
-    showMatchScoreSection();
-};
 
 async function showMatchScoreSection() {
     if (!currentMatch) return;
-    document.getElementById('match-select-section').style.display = 'none';
-    document.getElementById('match-score-section').style.display = '';
     document.getElementById('team-a').textContent = `${currentMatch.team_a.name}: ${currentMatch.team_a.players.map(p => p.name).join(', ')}`;
     document.getElementById('team-b').textContent = `${currentMatch.team_b.name}: ${currentMatch.team_b.players.map(p => p.name).join(', ')}`;
     // Load hole results and match status from DB
