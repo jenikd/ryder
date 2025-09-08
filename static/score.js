@@ -165,6 +165,15 @@ function renderHoles() {
 }
 
 function updateHoleButtons(hole) {
+    function getContrastYIQ(hexcolor) {
+        hexcolor = hexcolor.replace('#','');
+        if (hexcolor.length === 3) hexcolor = hexcolor[0]+hexcolor[0]+hexcolor[1]+hexcolor[1]+hexcolor[2]+hexcolor[2];
+        var r = parseInt(hexcolor.substr(0,2),16);
+        var g = parseInt(hexcolor.substr(2,2),16);
+        var b = parseInt(hexcolor.substr(4,2),16);
+        var yiq = ((r*299)+(g*587)+(b*114))/1000;
+        return (yiq >= 180) ? '#000' : '#fff';
+    }
     document.querySelectorAll(`.hole-btn[data-hole="${hole}"]`).forEach(btn => {
         const val = btn.getAttribute('data-val');
         btn.classList.remove('selected');
@@ -174,10 +183,10 @@ function updateHoleButtons(hole) {
             btn.classList.add('selected');
             if (val === 'A') {
                 btn.style.background = currentMatch.team_a.color;
-                btn.style.color = '#fff';
+                btn.style.color = getContrastYIQ(currentMatch.team_a.color);
             } else if (val === 'B') {
                 btn.style.background = currentMatch.team_b.color;
-                btn.style.color = '#fff';
+                btn.style.color = getContrastYIQ(currentMatch.team_b.color);
             }
         }
     });

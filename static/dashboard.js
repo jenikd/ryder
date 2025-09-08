@@ -20,13 +20,22 @@ function renderTeams(teams, projectedScores) {
     div.innerHTML = '';
     console.log('Rendering teams:', teams, projectedScores);
     
+    function getContrastYIQ(hexcolor) {
+        hexcolor = hexcolor.replace('#','');
+        if (hexcolor.length === 3) hexcolor = hexcolor[0]+hexcolor[0]+hexcolor[1]+hexcolor[1]+hexcolor[2]+hexcolor[2];
+        var r = parseInt(hexcolor.substr(0,2),16);
+        var g = parseInt(hexcolor.substr(2,2),16);
+        var b = parseInt(hexcolor.substr(4,2),16);
+        var yiq = ((r*299)+(g*587)+(b*114))/1000;
+        return (yiq >= 180) ? '#000' : '#fff';
+    }
     teams.forEach(t => {
-        console.log('Team data:', t);
+        const textColor = getContrastYIQ(t.color);
         let proj = '';
         if (projectedScores && projectedScores[t.id] !== undefined && projectedScores[t.id] !== t.score) {
-            proj = ` <span class="projected-score">(${projectedScores[t.id]})</span>`;
+            proj = ` <span class="projected-score" style="color:${textColor};">(${projectedScores[t.id]})</span>`;
         }
-        div.innerHTML += `<div class="team" style="background:${t.color};color:#fff;">${t.name}: <b>${t.score}</b>${proj}</div>`;
+        div.innerHTML += `<div class="team" style="background:${t.color};color:${textColor};">${t.name}: <b>${t.score}</b>${proj}</div>`;
     });
 }
 
