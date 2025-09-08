@@ -280,12 +280,11 @@ function getQueryParam(name) {
 window.onload = async function() {
     await fetchMatches();
     setupWebSocket();
-    renderScoringEnabled();
     // Disable scoring and finish button by default
     sEnabled = false;
     const finishBtn = document.getElementById('finish-btn');
     if (finishBtn) finishBtn.disabled = true;
-    // Enable scoring only after 3 clicks on pinned score within 3 seconds
+    // Enable scoring only after 5 clicks on pinned score within 3 seconds OR via button
     let clickCount = 0;
     let clickTimer = null;
     const pinnedScore = document.getElementById('match-score');
@@ -293,7 +292,6 @@ window.onload = async function() {
         sEnabled = true;
         if (finishBtn) finishBtn.disabled = false;
         renderHoles();
-        renderScoringEnabled();
     }
     function resetClicks() {
         clickCount = 0;
@@ -332,6 +330,16 @@ window.onload = async function() {
                 }
             }
         });
+    }
+    // Add scoring enable button
+    const scoringEnableBtn = document.getElementById('enable-scoring-btn');
+    if (scoringEnableBtn) {
+        scoringEnableBtn.onclick = function() {
+            enableScoring();
+            scoringEnableBtn.disabled = true;
+            scoringEnableBtn.textContent = 'Scoring Enabled';
+            scoringEnableBtn.style.background = '#90ee90'; // light green
+        };
     }
     window.onfocus = function() {
         if (!wsConnected) {
@@ -379,17 +387,6 @@ function renderMatchTitle() {
     }
     title.textContent = typeText;
 }
-
-function renderScoringEnabled() {
-    const se = document.getElementById('scoring-enabled');
-    if (!se) return;
-    if (sEnabled) {
-        se.textContent = 'Scoring Enabled';
-        se.style.color = 'green';
-    } else {
-        se.textContent = '';
-    }
-}   
 
 // Call renderMatchTitle() after loading match data
 function loadMatch(matchId) {
