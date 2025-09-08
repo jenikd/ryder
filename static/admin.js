@@ -8,6 +8,7 @@ window.editMatch = async function(matchId) {
     if (!match) return;
     // Populate form fields
     document.getElementById('match-id').value = match.id;
+    document.getElementById('match-start-time').value = match.start_time || '';
     document.getElementById('match-format').value = match.format;
     document.getElementById('match-team-a').value = match.team_a.id;
     document.getElementById('match-team-b').value = match.team_b.id;
@@ -284,10 +285,15 @@ document.getElementById('match-form').onsubmit = async function(e) {
     const teamB = parseInt(document.getElementById('match-team-b').value);
     const playersA = Array.from(document.getElementById('match-players-a').selectedOptions).map(opt => parseInt(opt.value));
     const playersB = Array.from(document.getElementById('match-players-b').selectedOptions).map(opt => parseInt(opt.value));
-    await fetch('/api/match/add', {
+    const start_time = document.getElementById('match-start-time').value;
+    const id = document.getElementById('match-id').value;
+    const url = id ? '/api/match/edit' : '/api/match/add';
+    const payload = { format, holes, team_a: teamA, team_b: teamB, players_a: playersA, players_b: playersB, start_time };
+    if (id) payload.id = parseInt(id);
+    await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ format, holes, team_a: teamA, team_b: teamB, players_a: playersA, players_b: playersB })
+        body: JSON.stringify(payload)
     });
     this.reset();
     fetchMatches();

@@ -62,6 +62,8 @@
             <h2>Matches</h2>
             <form id="match-form">
                 <input type="hidden" id="match-id">
+                <label for="match-start-time">Start Time (h:mm)</label>
+                <input type="text" id="match-start-time" pattern="^([0-9]{1,2}:[0-9]{2})$" placeholder="e.g. 8:30" style="width:7em;">
                 <label for="match-format">Format</label>
                 <select id="match-format" required>
                     <option value="singles">Singles</option>

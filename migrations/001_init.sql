@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS matches (
     team_b_id INTEGER,
     format TEXT NOT NULL,
     status TEXT NOT NULL,
+    start_time TEXT,
     FOREIGN KEY (team_a_id) REFERENCES teams(id),
     FOREIGN KEY (team_b_id) REFERENCES teams(id)
 );

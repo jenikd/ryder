@@ -33,13 +33,14 @@ const (
 )
 
 type Match struct {
-	ID       int         `json:"id"`
-	TeamA    *Team       `json:"team_a"`
-	TeamB    *Team       `json:"team_b"`
-	Format   MatchFormat `json:"format"`
-	Status   string      `json:"status"` // prepared, running, completed
-	PlayersA []Player    `json:"players_a"`
-	PlayersB []Player    `json:"players_b"`
+	ID        int         `json:"id"`
+	TeamA     *Team       `json:"team_a"`
+	TeamB     *Team       `json:"team_b"`
+	Format    MatchFormat `json:"format"`
+	Status    string      `json:"status"` // prepared, running, completed
+	StartTime string      `json:"start_time"`
+	PlayersA  []Player    `json:"players_a"`
+	PlayersB  []Player    `json:"players_b"`
 }
 
 type Score struct {
@@ -110,11 +111,12 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 		HCP  float64 `json:"hcp"`
 	}
 	type Match struct {
-		ID     int    `json:"id"`
-		Format string `json:"format"`
-		Holes  string `json:"holes"`
-		Status string `json:"status"`
-		TeamA  struct {
+		ID        int    `json:"id"`
+		Format    string `json:"format"`
+		Holes     string `json:"holes"`
+		Status    string `json:"status"`
+		StartTime string `json:"start_time"`
+		TeamA     struct {
 			ID      int           `json:"id"`
 			Name    string        `json:"name"`
 			Color   string        `json:"color"`
@@ -127,7 +129,7 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 			Players []MatchPlayer `json:"players"`
 		} `json:"team_b"`
 	}
-	rows, err := DB.Query(`SELECT m.id, m.format, m.holes, m.status, ta.id, ta.name, ta.color, tb.id, tb.name, tb.color FROM matches m JOIN teams ta ON m.team_a_id=ta.id JOIN teams tb ON m.team_b_id=tb.id`)
+	rows, err := DB.Query(`SELECT m.id, m.format, m.holes, m.status, m.start_time, ta.id, ta.name, ta.color, tb.id, tb.name, tb.color FROM matches m JOIN teams ta ON m.team_a_id=ta.id JOIN teams tb ON m.team_b_id=tb.id`)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -139,11 +141,13 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 		var taID, tbID int
 		var taName, tbName string
 		var tbColor, taColor string
-		if err := rows.Scan(&m.ID, &m.Format, &m.Holes, &m.Status, &taID, &taName, &taColor, &tbID, &tbName, &tbColor); err != nil {
+		var startTime string
+		if err := rows.Scan(&m.ID, &m.Format, &m.Holes, &m.Status, &startTime, &taID, &taName, &taColor, &tbID, &tbName, &tbColor); err != nil {
 			continue
 		}
 		m.TeamA.ID, m.TeamA.Name, m.TeamA.Color = taID, taName, taColor
 		m.TeamB.ID, m.TeamB.Name, m.TeamB.Color = tbID, tbName, tbColor
+		m.StartTime = startTime
 		// Fetch players for each team in this match
 		paRows, _ := DB.Query(`SELECT p.id, p.name, p.hcp FROM match_players mp JOIN players p ON mp.player_id=p.id WHERE mp.match_id=? AND mp.team_side='A'`, m.ID)
 		for paRows.Next() {
@@ -357,19 +361,20 @@ func AssignPlayerToTeam(w http.ResponseWriter, r *http.Request) {
 // --- Match Handlers ---
 func AddMatch(w http.ResponseWriter, r *http.Request) {
 	type req struct {
-		Format   string `json:"format"`
-		Holes    string `json:"holes"`
-		TeamA    int    `json:"team_a"`
-		TeamB    int    `json:"team_b"`
-		PlayersA []int  `json:"players_a"`
-		PlayersB []int  `json:"players_b"`
+		Format    string `json:"format"`
+		Holes     string `json:"holes"`
+		TeamA     int    `json:"team_a"`
+		TeamB     int    `json:"team_b"`
+		PlayersA  []int  `json:"players_a"`
+		PlayersB  []int  `json:"players_b"`
+		StartTime string `json:"start_time"`
 	}
 	var body req
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	res, err := DB.Exec("INSERT INTO matches (team_a_id, team_b_id, format, status, holes) VALUES (?, ?, ?, ?, ?)", body.TeamA, body.TeamB, body.Format, "prepared", body.Holes)
+	res, err := DB.Exec("INSERT INTO matches (team_a_id, team_b_id, format, status, holes, start_time) VALUES (?, ?, ?, ?, ?, ?)", body.TeamA, body.TeamB, body.Format, "prepared", body.Holes, body.StartTime)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -485,14 +490,15 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		teamNames[id] = name
 	}
 	// 2. Get all finished matches and accumulate scores
-	matchRows, _ := DB.Query("SELECT id, team_a_id, team_b_id, status FROM matches")
+	matchRows, _ := DB.Query("SELECT id, team_a_id, team_b_id, status, start_time FROM matches")
 	defer matchRows.Close()
 	matches := []map[string]interface{}{}
 	for matchRows.Next() {
 		var id, ta, tb int
 		var status string
-		matchRows.Scan(&id, &ta, &tb, &status)
-		m := map[string]interface{}{"id": id, "team_a_id": ta, "team_b_id": tb, "status": status, "team_a_name": teamNames[ta], "team_b_name": teamNames[tb]}
+		var startTime string
+		matchRows.Scan(&id, &ta, &tb, &status, &startTime)
+		m := map[string]interface{}{"id": id, "team_a_id": ta, "team_b_id": tb, "status": status, "team_a_name": teamNames[ta], "team_b_name": teamNames[tb], "start_time": startTime}
 		// Add player names and HCPs for each team
 		paRows, err := DB.Query(`SELECT p.name, p.hcp FROM match_players mp JOIN players p ON mp.player_id=p.id WHERE mp.match_id=? AND mp.team_side='A'`, id)
 		if err != nil {

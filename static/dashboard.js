@@ -98,11 +98,18 @@ function matchRow(m) {
             scoreHtml += `<div class='score-holes-left'>(${holesLeft} to play)</div>`;
         }
     }
+    console.log('Rendering match:', m);
     // Split players and score into columns for alignment
+    let startTimeHtml = '';
+    if (m.status === 'prepared' && m.start_time) {
+        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;">${m.start_time}</span>`;
+    }else {
+        startTimeHtml = `<span class='match-score'>${scoreHtml}</span>`;
+    }
     return `<li><span class="match-link" onclick="goToScore(${m.id})">
         <span class='match-format'>${format}</span>
         <span class='match-players'>${left}<br>${right}</span>
-        <span class='match-score'>${scoreHtml}</span>
+        ${startTimeHtml}
     </span></li>`;
 }
 
