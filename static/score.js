@@ -214,7 +214,7 @@ function updateMatchScoreDisplay() {
     for (let i = start; i < end; i++) {
         if (!holeResults[i]) holesLeft++;
     }
-    scoreText += `  (${holesLeft} to play)`;
+    scoreText += `  (Zbývá ${holesLeft})`;
     document.getElementById('match-score').textContent = scoreText;
 }
 
