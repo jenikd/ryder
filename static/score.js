@@ -166,10 +166,19 @@ function renderHoles() {
 
 function updateHoleButtons(hole) {
     document.querySelectorAll(`.hole-btn[data-hole="${hole}"]`).forEach(btn => {
-        if (btn.getAttribute('data-val') === holeResults[hole]) {
+        const val = btn.getAttribute('data-val');
+        btn.classList.remove('selected');
+        btn.style.background = '';
+        btn.style.color = '';
+        if (val === holeResults[hole]) {
             btn.classList.add('selected');
-        } else {
-            btn.classList.remove('selected');
+            if (val === 'A') {
+                btn.style.background = currentMatch.team_a.color;
+                btn.style.color = '#fff';
+            } else if (val === 'B') {
+                btn.style.background = currentMatch.team_b.color;
+                btn.style.color = '#fff';
+            }
         }
     });
 }
@@ -379,6 +388,7 @@ function loadMatch(matchId) {
         .then(r => r.json())
         .then(data => {
             currentMatch = data.match;
+            console.log('Loaded match:', currentMatch);
             renderMatchTitle();
             renderHoles();
             updateMatchScoreDisplay();

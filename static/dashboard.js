@@ -18,12 +18,15 @@ async function fetchDashboard() {
 function renderTeams(teams, projectedScores) {
     const div = document.getElementById('teams');
     div.innerHTML = '';
+    console.log('Rendering teams:', teams, projectedScores);
+    
     teams.forEach(t => {
+        console.log('Team data:', t);
         let proj = '';
         if (projectedScores && projectedScores[t.id] !== undefined && projectedScores[t.id] !== t.score) {
             proj = ` <span class="projected-score">(${projectedScores[t.id]})</span>`;
         }
-        div.innerHTML += `<div class="team">${t.name}: <b>${t.score}</b>${proj}</div>`;
+        div.innerHTML += `<div class="team" style="background:${t.color};color:#fff;">${t.name}: <b>${t.score}</b>${proj}</div>`;
     });
 }
 

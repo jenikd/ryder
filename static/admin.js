@@ -115,9 +115,9 @@ function renderTeams(teams) {
     ul.innerHTML = '';
     teams.forEach(t => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${t.name}</span>` +
+        li.innerHTML = `<span><span style="display:inline-block;width:1em;height:1em;background:${t.color};border-radius:50%;margin-right:0.5em;"></span>${t.name}</span>` +
             `<span class="actions">
-                <button class="edit" onclick="editTeam(${t.id}, '${t.name}')">Edit</button>
+                <button class="edit" onclick="editTeam(${t.id}, '${t.name}', '${t.color}')">Edit</button>
                 <button onclick="removeTeam(${t.id})">Remove</button>
             </span>`;
         ul.appendChild(li);
@@ -128,20 +128,22 @@ document.getElementById('team-form').onsubmit = async function(e) {
     e.preventDefault();
     const id = document.getElementById('team-id').value;
     const name = document.getElementById('team-name').value;
+    const color = document.getElementById('team-color').value;
     const url = id ? '/api/team/edit' : '/api/team/add';
     await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id ? parseInt(id) : undefined, name })
+        body: JSON.stringify({ id: id ? parseInt(id) : undefined, name, color })
     });
     this.reset();
     document.querySelector('#team-form button').textContent = 'Add Team';
     fetchTeams();
 };
 
-window.editTeam = function(id, name) {
+window.editTeam = function(id, name, color) {
     document.getElementById('team-id').value = id;
     document.getElementById('team-name').value = name;
+    document.getElementById('team-color').value = color || '#2563eb';
     document.querySelector('#team-form button').textContent = 'Save Team';
 };
 

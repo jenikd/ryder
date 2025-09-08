@@ -19,7 +19,8 @@ func autoMigrate(db *sql.DB) {
 		);`,
 		`CREATE TABLE IF NOT EXISTS teams (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL
+			name TEXT NOT NULL,
+			color TEXT DEFAULT '#2563eb'
 		);`,
 		`CREATE TABLE IF NOT EXISTS team_players (
 			team_id INTEGER NOT NULL,

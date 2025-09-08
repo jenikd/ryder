@@ -20,6 +20,7 @@ type Player struct {
 type Team struct {
 	ID      int      `json:"id"`
 	Name    string   `json:"name"`
+	Color   string   `json:"color"`
 	Players []Player `json:"players,omitempty"`
 }
 
@@ -116,15 +117,17 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 		TeamA  struct {
 			ID      int           `json:"id"`
 			Name    string        `json:"name"`
+			Color   string        `json:"color"`
 			Players []MatchPlayer `json:"players"`
 		} `json:"team_a"`
 		TeamB struct {
 			ID      int           `json:"id"`
 			Name    string        `json:"name"`
+			Color   string        `json:"color"`
 			Players []MatchPlayer `json:"players"`
 		} `json:"team_b"`
 	}
-	rows, err := DB.Query(`SELECT m.id, m.format, m.holes, m.status, ta.id, ta.name, tb.id, tb.name FROM matches m JOIN teams ta ON m.team_a_id=ta.id JOIN teams tb ON m.team_b_id=tb.id`)
+	rows, err := DB.Query(`SELECT m.id, m.format, m.holes, m.status, ta.id, ta.name, ta.color, tb.id, tb.name, tb.color FROM matches m JOIN teams ta ON m.team_a_id=ta.id JOIN teams tb ON m.team_b_id=tb.id`)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -135,11 +138,12 @@ func ListMatches(w http.ResponseWriter, r *http.Request) {
 		var m Match
 		var taID, tbID int
 		var taName, tbName string
-		if err := rows.Scan(&m.ID, &m.Format, &m.Holes, &m.Status, &taID, &taName, &tbID, &tbName); err != nil {
+		var tbColor, taColor string
+		if err := rows.Scan(&m.ID, &m.Format, &m.Holes, &m.Status, &taID, &taName, &taColor, &tbID, &tbName, &tbColor); err != nil {
 			continue
 		}
-		m.TeamA.ID, m.TeamA.Name = taID, taName
-		m.TeamB.ID, m.TeamB.Name = tbID, tbName
+		m.TeamA.ID, m.TeamA.Name, m.TeamA.Color = taID, taName, taColor
+		m.TeamB.ID, m.TeamB.Name, m.TeamB.Color = tbID, tbName, tbColor
 		// Fetch players for each team in this match
 		paRows, _ := DB.Query(`SELECT p.id, p.name, p.hcp FROM match_players mp JOIN players p ON mp.player_id=p.id WHERE mp.match_id=? AND mp.team_side='A'`, m.ID)
 		for paRows.Next() {
@@ -206,7 +210,7 @@ func ListPlayers(w http.ResponseWriter, r *http.Request) {
 
 // --- Team List Handler ---
 func ListTeams(w http.ResponseWriter, r *http.Request) {
-	rows, err := DB.Query("SELECT id, name FROM teams ORDER BY name")
+	rows, err := DB.Query("SELECT id, name, color FROM teams ORDER BY name")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -219,7 +223,7 @@ func ListTeams(w http.ResponseWriter, r *http.Request) {
 	var teams []Team
 	for rows.Next() {
 		var t Team
-		if err := rows.Scan(&t.ID, &t.Name); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Color); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -237,7 +241,7 @@ func EditTeam(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	_, err := DB.Exec("UPDATE teams SET name=? WHERE id=?", t.Name, t.ID)
+	_, err := DB.Exec("UPDATE teams SET name=?, color=? WHERE id=?", t.Name, t.Color, t.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -320,7 +324,7 @@ func AddTeam(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	res, err := DB.Exec("INSERT INTO teams (name) VALUES (?)", t.Name)
+	res, err := DB.Exec("INSERT INTO teams (name, color) VALUES (?, ?)", t.Name, t.Color)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -460,7 +464,7 @@ func GetMatchScore(w http.ResponseWriter, r *http.Request) {
 func Dashboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// 1. Get all teams
-	teamRows, err := DB.Query("SELECT id, name FROM teams")
+	teamRows, err := DB.Query("SELECT id, name, color FROM teams")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -473,8 +477,9 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 	for teamRows.Next() {
 		var id int
 		var name string
-		teamRows.Scan(&id, &name)
-		teams = append(teams, map[string]interface{}{"id": id, "name": name, "score": 0.0})
+		var color string
+		teamRows.Scan(&id, &name, &color)
+		teams = append(teams, map[string]interface{}{"id": id, "name": name, "score": 0.0, "color": color})
 		teamScores[id] = 0.0
 		projectedScores[id] = 0.0
 		teamNames[id] = name
