@@ -376,16 +376,28 @@ function renderMatchTitle() {
     const title = document.getElementById('match-title');
     if (!title || !currentMatch) return;
     let typeText = '';
+    // Czech translation for holes type
     if (currentMatch.holes === 'front9') {
-        typeText = 'Front 9';
+        typeText = 'První 9';
     } else if (currentMatch.holes === 'back9') {
-        typeText = 'Back 9';
+        typeText = 'Druhá 9';
     } else {
-        typeText = '18 Holes';
+        typeText = '18 jamek';
     }
-    // Optionally append format (singles, foursome, etc.)
+    // Czech translation for format
     if (currentMatch.format) {
-        typeText += ' - ' + currentMatch.format.charAt(0).toUpperCase() + currentMatch.format.slice(1);
+        let formatCz = '';
+        switch (currentMatch.format) {
+            case 'singles':
+                formatCz = 'Singly'; break;
+            case 'foursome':
+                formatCz = 'Foursome'; break;
+            case 'texas_scramble':
+                formatCz = 'Texas Scramble'; break;
+            default:
+                formatCz = currentMatch.format;
+        }
+        typeText += ' - ' + formatCz;
     }
     title.textContent = typeText;
 }
