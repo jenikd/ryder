@@ -635,8 +635,8 @@ func HandleMainPage(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/dashboard.html")
 		return
 	}
-	if r.URL.Path == "/admin" || r.URL.Path == "/admin/" {
-		http.ServeFile(w, r, "static/admin.html")
+	if r.URL.Path == "/adminjd" || r.URL.Path == "/adminjd/" {
+		http.ServeFile(w, r, "static/adminjd.html")
 		return
 	}
 	// Serve static assets (JS, CSS, etc.)
