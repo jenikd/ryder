@@ -337,8 +337,8 @@ window.onload = async function() {
         scoringEnableBtn.onclick = function() {
             enableScoring();
             scoringEnableBtn.disabled = true;
-            scoringEnableBtn.textContent = 'Scoring Enabled';
-            scoringEnableBtn.style.background = '#90ee90'; // light green
+            scoringEnableBtn.textContent = 'Skórování povoleno';
+            scoringEnableBtn.style.background = '#79b879ff';
         };
     }
     window.onfocus = function() {
@@ -362,10 +362,10 @@ function updateFinishButton() {
     const btn = document.getElementById('finish-btn');
     if (!btn || !currentMatch) return;
     if (currentMatch.status === 'completed') {
-        btn.textContent = 'Unfinish Match';
+        btn.textContent = 'Upravit zápas';
         btn.style.background = '#e53e3e';
     } else {
-        btn.textContent = 'Finish Match';
+        btn.textContent = 'Ukončit zápas';
         btn.style.background = '#38a169';
     }
 }
