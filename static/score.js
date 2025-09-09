@@ -176,18 +176,20 @@ function updateHoleButtons(hole) {
     }
     document.querySelectorAll(`.hole-btn[data-hole="${hole}"]`).forEach(btn => {
         const val = btn.getAttribute('data-val');
-        btn.classList.remove('selected');
+        // btn.classList.remove('selected');
         btn.style.background = '';
         btn.style.color = '';
         if (val === holeResults[hole]) {
             btn.classList.add('selected');
-            if (val === 'A') {
-                btn.style.background = currentMatch.team_a.color;
-                btn.style.color = getContrastYIQ(currentMatch.team_a.color);
-            } else if (val === 'B') {
-                btn.style.background = currentMatch.team_b.color;
-                btn.style.color = getContrastYIQ(currentMatch.team_b.color);
-            }
+            // if (val === 'A') {
+            //     btn.style.background = currentMatch.team_a.color;
+            //     btn.style.color = getContrastYIQ(currentMatch.team_a.color);
+            // } else if (val === 'B') {
+            //     btn.style.background = currentMatch.team_b.color;
+            //     btn.style.color = getContrastYIQ(currentMatch.team_b.color);
+            // }
+            // btn.style.background = currentMatch.team_a.color;
+            // btn.style.color = getContrastYIQ(currentMatch.team_a.color);
         }
     });
 }
