@@ -1,3 +1,28 @@
+// Auto-scroll system for overflowing match lists
+function setupAutoScroll() {
+    ["matches-prepared", "matches-running", "matches-completed"].forEach(id => {
+        const ul = document.getElementById(id);
+        if (!ul) return;
+        let scrollDir = 1;
+        let scrollStep = 1;
+        let scrollInterval = null;
+        function startScroll() {
+            if (ul.scrollHeight <= ul.clientHeight) return;
+            if (scrollInterval) clearInterval(scrollInterval);
+            scrollInterval = setInterval(() => {
+                ul.scrollTop += scrollDir * scrollStep;
+                if (ul.scrollTop + ul.clientHeight >= ul.scrollHeight) scrollDir = -1;
+                if (ul.scrollTop <= 0) scrollDir = 1;
+            }, 40);
+        }
+        function stopScroll() {
+            if (scrollInterval) clearInterval(scrollInterval);
+        }
+        ul.addEventListener('mouseenter', stopScroll);
+        ul.addEventListener('mouseleave', startScroll);
+        startScroll();
+    });
+}
 let ws = null;
 let wsConnected = false;
 let pingInterval = null;
@@ -119,6 +144,7 @@ window.onload = function() {
             fetchShow();
         }
     };
+    setTimeout(setupAutoScroll, 500);
 };
 
 function setupShowWebSocket() {
