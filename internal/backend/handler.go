@@ -631,6 +631,10 @@ func HandleMainPage(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/dashboard.html")
 		return
 	}
+	if r.URL.Path == "/show" || r.URL.Path == "/show/" {
+		http.ServeFile(w, r, "static/show.html")
+		return
+	}
 	if r.URL.Path == "/" || r.URL.Path == "" {
 		http.ServeFile(w, r, "static/dashboard.html")
 		return
