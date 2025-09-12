@@ -6,14 +6,38 @@ function setupAutoScroll() {
         let scrollDir = 1;
         let scrollStep = 1;
         let scrollInterval = null;
+        let lastScrollTop = null;
+        let stillTimer = null;
         function startScroll() {
             if (ul.scrollHeight <= ul.clientHeight) return;
             if (scrollInterval) clearInterval(scrollInterval);
             scrollInterval = setInterval(() => {
                 ul.scrollTop += scrollDir * scrollStep;
-                if (ul.scrollTop + ul.clientHeight >= ul.scrollHeight) scrollDir = -1;
-                if (ul.scrollTop <= 0) scrollDir = 1;
-            }, 40);
+                const maxScroll = ul.scrollHeight - ul.clientHeight;
+                if (ul.scrollTop >= maxScroll) {
+                    ul.scrollTop = maxScroll;
+                    scrollDir = -1;
+                }
+                if (ul.scrollTop <= 0) {
+                    ul.scrollTop = 0;
+                    scrollDir = 1;
+                }
+                // Check if stuck for 2 seconds
+                if (lastScrollTop === ul.scrollTop) {
+                    if (!stillTimer) {
+                        stillTimer = setTimeout(() => {
+                            scrollDir *= -1;
+                            stillTimer = null;
+                        }, 2000);
+                    }
+                } else {
+                    if (stillTimer) {
+                        clearTimeout(stillTimer);
+                        stillTimer = null;
+                    }
+                }
+                lastScrollTop = ul.scrollTop;
+            }, 180);
         }
         function stopScroll() {
             if (scrollInterval) clearInterval(scrollInterval);
@@ -21,6 +45,13 @@ function setupAutoScroll() {
         ul.addEventListener('mouseenter', stopScroll);
         ul.addEventListener('mouseleave', startScroll);
         startScroll();
+        // Add resize event to restart scroll logic
+        window.addEventListener('resize', () => {
+            stopScroll();
+            ul.scrollTop = 0;
+            scrollDir = 1;
+            startScroll();
+        });
     });
 }
 let ws = null;
@@ -74,9 +105,89 @@ function renderShowTeamscore(teams, projectedScores) {
 }
 
 function renderShowMatches(grouped) {
-    renderShowMatchGroup('matches-completed', grouped.completed || []);
-    renderShowMatchGroup('matches-running', grouped.running || []);
-    renderShowMatchGroup('matches-prepared', grouped.prepared || []);
+    // After update, re-enable auto-scroll for overflowing columns
+    setTimeout(() => {
+        ["matches-prepared", "matches-running", "matches-completed"].forEach(id => {
+            const ul = document.getElementById(id);
+            if (!ul || ul.parentElement.style.display === 'none') return;
+            // Remove previous listeners to avoid duplicates
+            ul.replaceWith(ul.cloneNode(true));
+            const newUl = document.getElementById(id);
+            // Enable auto-scroll only if overflowing
+            if (newUl.scrollHeight > newUl.clientHeight) {
+                let scrollDir = 1;
+                let scrollStep = 0.5;
+                let scrollInterval = null;
+                let lastScrollTop = null;
+                let stillTimer = null;
+                function startScroll() {
+                    if (newUl.scrollHeight <= newUl.clientHeight) return;
+                    if (scrollInterval) clearInterval(scrollInterval);
+                    scrollInterval = setInterval(() => {
+                        newUl.scrollTop += scrollDir * scrollStep;
+                        const maxScroll = newUl.scrollHeight - newUl.clientHeight;
+                        if (newUl.scrollTop >= maxScroll) {
+                            newUl.scrollTop = maxScroll;
+                            scrollDir = -1;
+                        }
+                        if (newUl.scrollTop <= 0) {
+                            newUl.scrollTop = 0;
+                            scrollDir = 1;
+                        }
+                        if (lastScrollTop === newUl.scrollTop) {
+                            if (!stillTimer) {
+                                stillTimer = setTimeout(() => {
+                                    scrollDir *= -1;
+                                    stillTimer = null;
+                                }, 2000);
+                            }
+                        } else {
+                            if (stillTimer) {
+                                clearTimeout(stillTimer);
+                                stillTimer = null;
+                            }
+                        }
+                        lastScrollTop = newUl.scrollTop;
+                    }, 40);
+                }
+                function stopScroll() {
+                    if (scrollInterval) clearInterval(scrollInterval);
+                }
+                newUl.addEventListener('mouseenter', stopScroll);
+                newUl.addEventListener('mouseleave', startScroll);
+                startScroll();
+                window.addEventListener('resize', () => {
+                    stopScroll();
+                    newUl.scrollTop = 0;
+                    scrollDir = 1;
+                    startScroll();
+                });
+            }
+        });
+    }, 0);
+    // Count visible columns and update grid
+    setTimeout(() => {
+        const grid = document.querySelector('.matches-grid');
+        if (!grid) return;
+        const visibleSections = Array.from(grid.children).filter(sec => sec.style.display !== 'none');
+        grid.style.gridTemplateColumns = `repeat(${visibleSections.length}, 1fr)`;
+    }, 0);
+    const groups = [
+        { id: 'matches-prepared', arr: grouped.prepared || [] },
+        { id: 'matches-running', arr: grouped.running || [] },
+        { id: 'matches-completed', arr: grouped.completed || [] }
+    ];
+    groups.forEach(g => {
+        renderShowMatchGroup(g.id, g.arr);
+        const section = document.getElementById(g.id)?.parentElement;
+        if (section) {
+            if (g.arr.length === 0) {
+                section.style.display = 'none';
+            } else {
+                section.style.display = '';
+            }
+        }
+    });
 }
 
 function renderShowMatchGroup(listId, matches) {
@@ -90,7 +201,7 @@ function renderShowMatchGroup(listId, matches) {
 
 function showMatchRow(m) {
     function playerList(players) {
-        return (players || []).map(p => `${p.name}${p.hcp !== undefined && p.hcp !== null ? ` (HCP: ${p.hcp})` : ''}`).join('<br>');
+        return (players || []).map(p => `${p.name}`).join('<br>');
     }
     const left = playerList(m.players_a);
     const right = playerList(m.players_b);
@@ -122,7 +233,9 @@ function showMatchRow(m) {
     }
     let startTimeHtml = '';
     if (m.status === 'prepared' && m.start_time) {
-        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;">${m.start_time}</span>`;
+        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;;min-width:60px;">${m.start_time}</span>`;
+    } else if (m.status === 'prepared') {
+        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;min-width:60px;"></span>`;
     }
     return `<li><span class="match-link">
         <span class='match-format'>${format}</span>

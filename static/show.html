@@ -21,7 +21,7 @@
             flex-direction: column;
             box-sizing: border-box;
         }
-        h1, h2 { text-align: center; color: #2563eb; font-size: 2.5rem; }
+        h1, h2 { text-align: center; color: #565656; font-size: 2.5rem; }
         .matches-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -200,23 +200,23 @@
 </head>
 <body>
     <div class="container">
+        <h1>Ryder Cup 2025</h1>
         <div style="display: flex; align-items: center; justify-content: center; gap: 2.5em; margin-bottom: 1.5rem;">
             <div id="show-teamscore-left" class="show-teamscore"></div>
             <img src="/img/logo.png" alt="Ryder Cup Logo" style="max-width:180px;">
             <div id="show-teamscore-right" class="show-teamscore"></div>
         </div>
-        <h1>Ryder Cup 2025</h1>
         <div class="matches-grid">
             <div class="matches-section">
-                <h2>Připravené zápasy</h2>
+                <h2>Připravené</h2>
                 <ul id="matches-prepared"></ul>
             </div>
             <div class="matches-section">
-                <h2>Probíhající zápasy</h2>
+                <h2>Probíhající</h2>
                 <ul id="matches-running"></ul>
             </div>
             <div class="matches-section">
-                <h2>Dokončené zápasy</h2>
+                <h2>Dokončené</h2>
                 <ul id="matches-completed"></ul>
             </div>
         </div>
