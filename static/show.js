@@ -233,9 +233,11 @@ function showMatchRow(m) {
     }
     let startTimeHtml = '';
     if (m.status === 'prepared' && m.start_time) {
-        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;;min-width:60px;">${m.start_time}</span>`;
+        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;;min-width:100px;text-align: right;">${m.start_time}</span>`;
     } else if (m.status === 'prepared') {
-        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;min-width:60px;"></span>`;
+        startTimeHtml = `<span class='match-start-time' style="display:block; font-size:1.1em; color:#2563eb; font-weight:600; margin-bottom:0.2em;min-width:100px;text-align: right;"></span>`;
+    } else {
+        startTimeHtml = `<span class='match-score'>${scoreHtml}</span>`;
     }
     return `<li><span class="match-link">
         <span class='match-format'>${format}</span>
@@ -243,7 +245,6 @@ function showMatchRow(m) {
             <span style="display:block; text-align:left; min-width:0; max-width:48%; word-break:break-word;">${left}</span>
             <span style="display:block; text-align:right; min-width:0; max-width:48%; word-break:break-word;">${right}</span>
         </span>
-        <span class='match-score'>${scoreHtml}</span>
         ${startTimeHtml}
     </span></li>`;
 }
